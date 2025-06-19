@@ -6,16 +6,12 @@ def predict_churn_from_input(clf, features, df_pd):
     print("\n--- Enter Gameplay Details ---")
     try:
         playtime_hours = float(input("Playtime in last 30 days (hours): "))
-        in_game_purchases = int(input("Number of in-game purchases: "))
+        in_game_purchases = int(input("Number of game purchases: "))
         level = int(input("Player Level: "))
-        is_male = int(input("Gender (1 for Male, 0 for Female/Other): "))
+        is_male = input("Gender : Male or Female : ")
         achievements = int(input("Number of Achievements Unlocked: "))
     except ValueError:
         print("Invalid input. Please enter numbers only.")
-        return
-
-    if is_male not in (0, 1):
-        print("Gender must be 1 (Male) or 0 (Female/Other).")
         return
 
     playtime_per_level = playtime_hours / level if level > 0 else 0
@@ -35,7 +31,6 @@ def predict_churn_from_input(clf, features, df_pd):
         "PlayTimeHours": playtime_hours,
         "InGamePurchases": in_game_purchases,
         "PlayerLevel": level,
-        "is_male": is_male,
         "AchievementsUnlocked": achievements,
         "PlaytimePerLevel": playtime_per_level,
         "AchievementsPerLevel": achievements_per_level,

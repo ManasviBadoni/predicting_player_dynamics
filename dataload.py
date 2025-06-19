@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import when, col
+from pyspark.sql.functions import when, col, avg
 
 # Set PySpark environment
 os.environ["PYSPARK_PYTHON"] = "python"
@@ -21,8 +21,11 @@ spark.sparkContext.setLogLevel("ERROR")
 def load_and_process_data(file_path):
     df = spark.read.csv(file_path, header=True, inferSchema=True)
 
+    # Compute average PlayTimeHours
+    avg_playtime = df.select(avg("PlayTimeHours")).first()[0]
+
     # Feature Engineering
-    df = df.withColumn("churn", when(col("PlayTimeHours") < 1, 1).otherwise(0))
+    df = df.withColumn("churn", when(col("PlayTimeHours") < avg_playtime, 1).otherwise(0))
     df = df.withColumn("is_male", when(col("Gender") == "Male", 1).otherwise(0))
     df = df.withColumn("PlaytimePerLevel", when(col("PlayerLevel") > 0, col("PlayTimeHours") / col("PlayerLevel")).otherwise(0))
     df = df.withColumn("AchievementsPerLevel", when(col("PlayerLevel") > 0, col("AchievementsUnlocked") / col("PlayerLevel")).otherwise(0))
@@ -39,7 +42,7 @@ def load_and_process_data(file_path):
 
     # Final feature list
     features = [
-        "PlayTimeHours", "InGamePurchases", "PlayerLevel", "is_male", "AchievementsUnlocked",
+        "PlayTimeHours", "InGamePurchases", "PlayerLevel", "AchievementsUnlocked",
         "PlaytimePerLevel", "AchievementsPerLevel", "PlaytimePurchasesRatio",
         "EngagementScore", "EngagementLevelNum"
     ]
@@ -53,7 +56,7 @@ def load_and_process_data(file_path):
     # Churn Class Distribution Plot
     plt.figure(figsize=(6, 4))
     sns.countplot(x="churn", data=df_pd, palette=["skyblue", "salmon"])
-    plt.title("Churn Class Distribution")
+    plt.title("Churn Class Distribution (Threshold = Avg PlayTime)")
     plt.xlabel("Churn Class (0 = Stay, 1 = Churn)")
     plt.ylabel("Number of Players")
     plt.xticks([0, 1], ["Stay", "Churn"])
